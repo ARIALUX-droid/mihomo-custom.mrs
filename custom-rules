@@ -1,0 +1,20 @@
+payload:
+# ==================== 系统更新 ====================
+  #win系统更新不走代理以免浪费流量
+  - DOMAIN-SUFFIX,windowsupdate.com,DIRECT
+
+# ==================== 游戏规则 ====================
+#Steam游戏下载更新不走代理以免浪费流量  
+  - DOMAIN-SUFFIX,xz.pphimalayanrt.com,DIRECT 
+  - DOMAIN-SUFFIX,st.dl.eccdnx.com,DIRECT 
+  - DOMAIN-SUFFIX,dl.steam.clngaa.com,DIRECT
+  - DOMAIN-SUFFIX,smogfly.com,DIRECT 
+
+ # CS2 进程直连规则
+  - DOMAIN-SUFFIX,steamserver.net,DIRECT
+  - PROCESS-NAME,cs2.exe,DIRECT
+
+# ==================== 自媒体供应商 ====================
+  - DOMAIN-SUFFIX,285286.xyz,Emby服  #TembyGroup
+  - DOMAIN-SUFFIX,emby.cn2gias.uk,Emby服  #守候网络 机场服
+ 
