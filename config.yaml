@@ -1,0 +1,353 @@
+# 名称: OneTouch 一键连
+# 地址: https://github.com/666OS/YYDS
+# 版本: v26.1.0
+# 作者: YYDS666
+# 更新: 2026 年 1 月 30 日
+# 频道: https://t.me/Pinched666
+# 描述: 一键连纯净版
+
+# ==================== 锚点配置 ====================
+# 代理提供者模板 - 订阅源基础配置
+BaseProvider: &BaseProvider {type: http, interval: 86400, proxy: DIRECT, health-check: {enable: true, url: 'https://www.google.com/generate_204', interval: 300}, filter: '^(?!.*(群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|教程|关注|更新|作者|加入|USE|USED|TOTAL|ETVIRE|EMAIL|Panel|Channel|Author))'}
+
+# 策略组类型模板 - 定义不同的策略组基础配置
+BaseUT: &BaseUT
+  type: url-test
+  interval: 200
+  lazy: true
+  url: "https://www.google.com/generate_204"
+  hidden: true
+
+BaseFB: &BaseFB
+  type: fallback
+  interval: 200
+  lazy: true
+  url: "https://www.google.com/generate_204"
+  hidden: true
+
+
+# 节点筛选正则表达式 - 基于地理位置和关键词过滤
+FilterHK: &FilterHK '^(?=.*(?i)(港|🇭🇰|HK|Hong|HKG))(?!.*(排除1|排除2|5x)).*$'
+FilterSG: &FilterSG '^(?=.*(?i)(坡|🇸🇬|SG|Sing|SIN|XSP))(?!.*(排除1|排除2|5x)).*$'
+FilterJP: &FilterJP '^(?=.*(?i)(日|🇯🇵|JP|Japan|NRT|HND|KIX|CTS|FUK))(?!.*(排除1|排除2|5x)).*$'
+FilterUS: &FilterUS '^(?=.*(?i)(美|🇺🇸|US|USA|SJC|JFK|LAX|ORD|ATL|DFW|SFO|MIA|SEA|IAD))(?!.*(排除1|排除2|5x)).*$'
+FilterTW: &FilterTW '^(?=.*(?i)(台|🇼🇸|🇹🇼|TW|tai|TPE|TSA|KHH))(?!.*(排除1|排除2|5x)).*$'
+FilterEU: &FilterEU '^(?=.*(?i)(奥|比|保|克罗地亚|塞|捷|丹|爱沙|芬|法|德|希|匈|爱尔|意|拉|立|卢|马其它|荷|波|葡|罗|斯洛伐|斯洛文|西|瑞|英|🇧🇪|🇨🇿|🇩🇰|🇫🇮|🇫🇷|🇩🇪|🇮🇪|🇮🇹|🇱🇹|🇱🇺|🇳🇱|🇵🇱|🇸🇪|🇬🇧|CDG|FRA|AMS|MAD|BCN|FCO|MUC|BRU))(?!.*(排除1|排除2|5x)).*$'
+FilterOT: &FilterOT '^(?!.*(DIRECT|直接连接|美|港|坡|台|新|日|韩|奥|比|保|克罗地亚|塞|捷|丹|爱沙|芬|法|德|希|匈|爱尔|意|拉|立|卢|马其它|荷|波|葡|罗|斯洛伐|斯洛文|西|瑞|英|🇭🇰|🇼🇸|🇹🇼|🇸🇬|🇯🇵|🇰🇷|🇺🇸|🇬🇧|🇦🇹|🇧🇪|🇨🇿|🇩🇰|🇫🇮|🇫🇷|🇩🇪|🇮🇪|🇮🇹|🇱🇹|🇱🇺|🇳🇱|🇵🇱|🇸🇪|HK|TW|SG|JP|KR|US|GB|CDG|FRA|AMS|MAD|BCN|FCO|MUC|BRU|HKG|TPE|TSA|KHH|SIN|XSP|NRT|HND|KIX|CTS|FUK|JFK|LAX|ORD|ATL|DFW|SFO|MIA|SEA|IAD|LHR|LGW))'
+FilterAL: &FilterAL '^(?!.*(DIRECT|直接连接|群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|教程|关注|更新|作者|加入|USE|USED|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author))'
+
+# 策略组代理列表模板 - 预定义的代理节点优先级排序
+SelectAL: &SelectAL   {type: select, proxies: [优, 故障转移, 香港自动, 台湾自动, 日本自动, 狮城自动, 美国自动, 欧洲自动, 手动选择, 直接连接, REJECT]}
+SelectOne: &SelectOne {type: select, proxies: [一键连, 故障转移, 优, 美国自动, 狮城自动, 香港自动, 台湾自动, 日本自动,  欧洲自动, 手动选择, 直接连接, REJECT]}
+SelectUS: &SelectUS   {type: select, proxies: [优, 故障转移, 美国自动, 一键连, 香港自动, 台湾自动, 日本自动, 狮城自动, 欧洲自动, 手动选择, 直接连接, REJECT]}
+SelectDC: &SelectDC   {type: select, proxies: [直接连接, 一键连, 优, 故障转移, 香港自动, 台湾自动, 日本自动, 狮城自动, 美国自动, 欧洲自动, 手动选择, REJECT]}
+
+# ==================== 代理提供者 ====================
+proxy-providers:
+  优质服务商:
+    <<: *BaseProvider
+    url: ""
+    path: ./providers/优质服务商.yaml
+    override:
+      additional-prefix: '[优] '
+
+  备用服务商:
+    <<: *BaseProvider
+    url: ""
+    path: ./providers/备用服务商.yaml  
+    override:
+      additional-prefix: '[备] '
+
+
+# ==================== 核心配置 ====================
+# 基础配置
+mode: rule
+mixed-port: 7890
+ipv6: false
+allow-lan: true
+unified-delay: true
+tcp-concurrent: true
+log-level: silent    #error
+bind-address: '*'
+find-process-mode: 'always'
+keep-alive-interval: 30
+keep-alive-idle: 15
+
+# 认证配置
+authentication:
+  - mihomo:yyds666
+skip-auth-prefixes:
+  - 192.168.1.0/24
+  - 192.168.31.0/24
+  - 192.168.100.0/24
+  - 127.0.0.1/8
+
+# 实验性功能
+experimental:
+  quic-go-disable-gso: true  
+     
+# 管理面板配置
+external-controller: 0.0.0.0:9090
+secret: ""
+external-ui: ui
+external-ui-name: zashboard
+external-ui-url: "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip"
+
+
+# 配置存储
+profile:
+  store-selected: true
+  store-fake-ip: true
+
+# 流量嗅探
+sniffer:
+  enable: true
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443, 8443]
+  skip-domain:
+    - "Mijia Cloud"
+    - "+.push.apple.com"
+
+    
+# TUN模式配置
+tun:
+  enable: true
+  stack: gvisor
+  device: Meta
+  dns-hijack:
+    - "any:53"
+    - "tcp://any:53"
+  auto-route: true
+  auto-redirect: true
+  auto-detect-interface: true
+  exclude-package:
+  #  - com.tencent.mm           # 微信
+  # - com.tencent.mobileqq     # QQ
+  # - com.eg.android.AlipayGphone # 支付宝
+  # - com.unionpay             # 云闪付
+   - com.miui.packageinstaller #小米应用包安装程序
+    
+# DNS配置
+dns:
+  enable: true
+  listen: 0.0.0.0:1053
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver:
+    - 119.29.29.29
+    - 180.184.1.1
+    - 223.5.5.5
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  fake-ip-filter:
+    - rule-set:Private
+    - rule-set:China
+    - rule-set:games-cn
+    - +.miwifi.com
+    - +.docker.io
+    - +.market.xiaomi.com
+    - +.push.apple.com
+
+# ==================== 代理策略组 ====================
+proxy-groups:
+  - name: 一键连
+    icon: "https://github.com/666OS/YYDS/raw/main/mihomo/image/mihomo.png"
+    <<: *SelectAL
+
+  - name: 故障转移
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/ULB.png"
+    proxies: [优, 美国自动, 狮城自动, 香港自动, 台湾自动, 日本自动, 欧洲自动, 手动选择, 直接连接, REJECT]
+    <<: *BaseFB
+
+  - name: 人工智能
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/AI.png"
+    <<: *SelectUS
+
+  - name: Emby服
+    icon: "https://git.imee.me/https://github.com/Koolson/Qure/raw/master/IconSet/Color/Emby.png"
+    <<: *SelectUS
+
+  - name: 国内流量
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/China.png"
+    <<: *SelectDC
+
+  - name: 手动选择
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/Clubhouse.png"
+    type: select
+    include-all: true
+    filter: *FilterAL
+
+  - name: 广告
+    icon: "https://git.imee.me/https://github.com/Koolson/Qure/raw/master/IconSet/Color/anti-ad.png"
+    hidden: true
+    type: select
+    proxies: [REJECT-DROP, REJECT, PASS]
+    
+  - name: 直接连接
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/Direct.png"
+    type: select
+    proxies: [DIRECT]
+    hidden: true
+
+  - name: 优
+    icon: "https://git.imee.me/https://github.com/Koolson/Qure/raw/master/IconSet/Color/Server.png"
+    use: [优质服务商]
+    filter: *FilterAL
+    hidden: true
+    <<: *BaseFB
+
+  - name: 香港自动
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/Hong_Kong.png"
+    filter: *FilterHK
+    include-all: true
+    <<: *BaseUT
+
+  - name: 台湾自动
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/Taiwan.png"
+    filter: *FilterTW
+    include-all: true
+    <<: *BaseUT
+
+  - name: 日本自动
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/Japan.png"
+    filter: *FilterJP
+    include-all: true
+    <<: *BaseUT
+
+  - name: 狮城自动
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/Singapore.png"
+    filter: *FilterSG
+    include-all: true
+    <<: *BaseUT
+
+  - name: 美国自动
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/United_States.png"
+    filter: *FilterUS
+    include-all: true
+    <<: *BaseUT
+
+  - name: 欧洲自动
+    icon: "https://github.com/Koolson/Qure/raw/master/IconSet/Color/European_Union.png"
+    filter: *FilterEU
+    include-all: true
+    <<: *BaseUT
+  
+# ==================== 规则路由 ====================
+rules: 
+  - PROCESS-NAME,cs2.exe,直接连接
+  # 拦截规则
+  - RULE-SET,anti-ad,广告
+  - AND,((DST-PORT,443),(NETWORK,UDP),(NOT,((GEOIP,CN)))),REJECT  # 阻止海外 QUIC
+  
+  #Googleplay下载用
+  - DOMAIN-SUFFIX,googleapis.cn,直接连接
+  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,直接连接
+  - DOMAIN-SUFFIX,xn--ngstr-cn-8za9o.com,直接连接
+
+  # 域名规则
+  - RULE-SET,GoogleFCM,直接连接
+  - RULE-SET,games-cn,直接连接
+  - RULE-SET,Private,直接连接
+  - RULE-SET,Win系统更新,国内流量
+  - RULE-SET,AI,人工智能
+  - RULE-SET,Emby,Emby服
+  - RULE-SET,Proxy,一键连
+  - RULE-SET,China,国内流量
+  # IP规则
+  - RULE-SET,PrivateIP,直接连接,no-resolve
+  - RULE-SET,EmbyIP,Emby服,no-resolve
+  - RULE-SET,ProxyIP,一键连,no-resolve
+  - RULE-SET,ChinaIP,国内流量
+  # 兜底规则
+  - MATCH,一键连
+
+# ==================== 规则集 ====================
+# 规则集行为模板
+BehaviorDN: &BehaviorDN
+  type: http
+  behavior: domain
+  format: mrs
+  interval: 86400
+
+BehaviorIP: &BehaviorIP
+  type: http
+  behavior: ipcidr
+  format: mrs
+  interval: 86400
+
+# 规则集配置
+rule-providers:
+  anti-ad:
+    <<: *BehaviorDN
+    path: ./rules/anti-ad.mrs
+    url: "https://anti-ad.net/mihomo.mrs"
+
+  Private:
+    <<: *BehaviorDN
+    path: ./rules/Private.mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/private.mrs"
+
+  AI:
+    <<: *BehaviorDN
+    path: ./rules/AI.mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ai-!cn.mrs"
+
+  Win系统更新:
+    <<: *BehaviorDN
+    path: ./rules/WinUpdate.mrs
+    url: "https://gh-proxy.org/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/meta/geo/geosite/win-update.mrs"
+
+  GoogleFCM:
+    <<: *BehaviorDN
+    path: ./rules/GoogleFCM.mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/googlefcm.mrs"
+
+  games-cn:
+    <<: *BehaviorDN
+    path: ./rules/games-cn.mrs
+    url: "https://gh-proxy.org/https://github.com/DustinWin/ruleset_geodata/releases/download/mihomo-ruleset/games-cn.mrs"
+
+  Emby:
+    <<: *BehaviorDN
+    path: ./rules/Emby.mrs
+    url: "https://github.com/666OS/rules/raw/release/mihomo/domain/Emby.mrs"
+
+  Proxy:
+    <<: *BehaviorDN
+    path: ./rules/Proxy.mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/geolocation-!cn.mrs"
+
+  China:
+    <<: *BehaviorDN
+    path: ./rules/China.mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/cn.mrs"
+
+  # IP 规则
+
+  EmbyIP:
+    <<: *BehaviorIP
+    path: ./rules/EmbyIP.mrs
+    url: "https://github.com/666OS/rules/raw/release/mihomo/ip/Emby.mrs"
+
+  ProxyIP:
+    <<: *BehaviorIP
+    path: ./rules/ProxyIP.mrs
+    url: "https://github.com/666OS/rules/raw/release/mihomo/ip/Proxy.mrs"
+
+  ChinaIP:
+    <<: *BehaviorIP
+    path: ./rules/ChinaIP.mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cn.mrs"
+
+  PrivateIP:
+    <<: *BehaviorIP
+    path: ./rules/PrivateIP.mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/private.mrs"
